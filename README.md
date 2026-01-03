@@ -15,6 +15,7 @@ This is a **standalone simulation** intended for audit and accountability discus
 - Uses a **deterministic stub** (not real LLMs) to guarantee reproducibility
 - The goal is to demonstrate **negative proof via AJT logging**, not real-world safety or enforcement
 - Not a production system — this is a proof-of-concept for accountability mechanisms
+- **All policies, cases, and inputs are synthetic and for demonstration purposes only**
 
 ---
 
