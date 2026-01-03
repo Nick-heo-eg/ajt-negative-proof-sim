@@ -1,0 +1,54 @@
+# Air Canada Policy
+# Prevents chatbot from providing misinformation about refund policies
+# Based on real-world incident where chatbot gave incorrect refund information
+
+version: "1.0.0"
+case_id: "aircanada"
+description: "Enforce accurate refund policy information with source-of-truth validation"
+
+# Source of Truth - Actual refund policy
+source_of_truth:
+  refund_policy:
+    bereavement_discount: true
+    bereavement_refund_after_travel: false
+    documentation_required: true
+    policy_url: "https://www.aircanada.com/ca/en/aco/home/plan/medical-and-bereavement-travel.html"
+
+  forbidden_claims:
+    - "you can book now at the regular fare, and then apply for a refund"
+    - "apply for a refund of the fare difference later"
+    - "get a refund later"
+    - "you might be able to get a refund later"
+    - "apply bereavement fare after"
+
+# Rules applied in order
+rules:
+  - id: "R1_source_of_truth_enforcement"
+    type: "source_of_truth_enforcement"
+    description: "Block any response contradicting official refund policy"
+    source_of_truth:
+      forbidden_claims:
+        - "you can book now at the regular fare, and then apply for a refund"
+        - "apply for a refund of the fare difference later"
+        - "get a refund later"
+        - "you might be able to get a refund later"
+        - "apply bereavement fare after"
+    reason: "Response contradicts official Air Canada refund policy"
+
+  - id: "R2_require_citation"
+    type: "require_citation"
+    description: "All policy statements must cite official source"
+    reason: "Policy information must be traceable to official documentation"
+
+  - id: "R3_confidence_threshold"
+    type: "confidence_threshold"
+    min_confidence: 0.75
+    description: "Block low-confidence responses about policy"
+    reason: "Insufficient confidence for policy-critical information"
+
+fallback: "I don't have confirmed information on that policy. Please check the official Air Canada policy at aircanada.com or contact customer service directly."
+
+metadata:
+  created: "2026-01-04"
+  case_reference: "Air Canada chatbot incident 2024"
+  regulatory_context: "Consumer protection, duty to provide accurate information"
