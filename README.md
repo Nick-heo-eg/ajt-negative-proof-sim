@@ -1,7 +1,7 @@
-# AJT Negative Proof Simulation
+# AI Judgment Trail (AJT) — Negative Proof Simulation
 
-This repository demonstrates how a minimal, audit-aligned Judgment Trace (AJT)
-can be extended to provide **Negative Proof**:
+This repository demonstrates how a minimal, audit-aligned
+AI Judgment Trail (AJT) can be extended to provide **Negative Proof**:
 verifiable evidence of what an AI system explicitly blocked.
 
 This is a **standalone simulation** intended for audit and accountability discussions.
@@ -13,7 +13,7 @@ This is a **standalone simulation** intended for audit and accountability discus
 **This is a controlled simulation for audit rehearsal.**
 
 - Uses a **deterministic stub** (not real LLMs) to guarantee reproducibility
-- The goal is to demonstrate **negative proof via AJT logging**, not real-world safety or enforcement
+- The goal is to demonstrate **negative proof via AI Judgment Trail logging**, not real-world safety or enforcement
 - Not a production system — this is a proof-of-concept for accountability mechanisms
 - **All policies, cases, and inputs are synthetic and for demonstration purposes only**
 
@@ -28,7 +28,7 @@ This is a **standalone simulation** intended for audit and accountability discus
 
 **This project DOES demonstrate:**
 - ✅ **Auditability of decision boundaries** via structured logs
-- ✅ Reproducible evidence trails for post-incident accountability
+- ✅ Reproducible AI Judgment Trails for post-incident accountability
 - ✅ Separation of LLM generation from policy enforcement
 
 This is a **simulation for audit rehearsal**, not a production compliance tool.
@@ -41,7 +41,18 @@ This is a **simulation for audit rehearsal**, not a production compliance tool.
 
 👉 **[Read: Why AJT? When "what happened" isn't enough](WHY_AJT.md)**
 
-**TL;DR**: Current stack answers "what happened" (✅ passes peacetime audits). AJT answers "why was this allowed" (essential after incidents). Think of it as optional insurance - cheap now, invaluable when courts ask.
+**TL;DR**: Current stack answers "what happened" (✅ passes peacetime audits). AJT answers "why was this allowed" (valuable after incidents). Think of it as optional insurance - cheap now, invaluable when courts ask.
+
+### Why "Trail"?
+
+A trail represents a sequence of judgment decisions over time, not just isolated logs.
+
+AI Judgment Trail focuses on:
+- where judgment occurred
+- where it stopped
+- and why certain paths were blocked
+
+This is essential for post-incident accountability, where "what happened" is insufficient without "what was deliberately prevented."
 
 ---
 
@@ -63,7 +74,8 @@ This is a **simulation for audit rehearsal**, not a production compliance tool.
 
 ## Relation to AJT Spec
 
-This simulation uses the minimal Judgment Trace (AJT) schema defined in:
+This simulation uses the minimal Judgment Trace schema
+used to represent an AI Judgment Trail (AJT), defined in:
 
 **https://github.com/Nick-heo-eg/spec**
 
@@ -73,6 +85,8 @@ This simulation uses the minimal Judgment Trace (AJT) schema defined in:
 
 This repository depends only on the public AJT specification
 and is intentionally decoupled from any internal systems.
+
+**Note**: Schema naming uses "Judgment Trace" for historical reasons; the conceptual model is AI Judgment Trail.
 
 ---
 
@@ -170,7 +184,7 @@ Each run produces a JSON log with:
 - **Candidates** (all generated options)
 - **Decision basis** (selected candidate + applied rule IDs)
 - **Negative Proof** (blocked candidates with reasons)
-- **AJT record** (spec-compliant, 9 required fields + extensions)
+- **AI Judgment Trail record** (spec-compliant, 9 required fields + extensions)
 - **Reproducibility** (seed + policy hash + run hash)
 
 ---
@@ -196,7 +210,7 @@ Each run produces a JSON log with:
 ## Failure Modes
 
 **Logging Failure Behavior:**
-- If AJT logging fails → system fails closed (no decision emitted)
+- If AI Judgment Trail logging fails → system fails closed (no decision emitted)
 - If policy file missing → simulation aborts with error
 - If hash mismatch detected → audit trail integrity compromised (logged)
 
