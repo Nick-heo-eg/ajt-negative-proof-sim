@@ -1,8 +1,6 @@
 # AI Judgment Trail (AJT) — Negative Proof Simulation
 
-This repository demonstrates how a minimal, audit-aligned
-AI Judgment Trail (AJT) can be extended to provide **Negative Proof**:
-verifiable evidence of what an AI system explicitly blocked.
+This repository demonstrates post-incident accountability for AI systems: verifiable evidence of what was deliberately blocked, not just what happened.
 
 This is a **standalone simulation** intended for audit and accountability discussions.
 
