@@ -37,11 +37,11 @@ This is a **simulation for audit rehearsal**, not a production compliance tool.
 
 ## 🤔 Why AJT?
 
-**"Existing tools (CloudTrail, S3, Datadog) already pass EU AI Act audits. Why this?"**
+**"Existing tools (CloudTrail, S3, Datadog) already handle basic logging. Why this?"**
 
 👉 **[Read: Why AJT? When "what happened" isn't enough](WHY_AJT.md)**
 
-**TL;DR**: Current stack answers "what happened" (✅ passes peacetime audits). AJT answers "why was this allowed" (valuable after incidents). Think of it as optional insurance - cheap now, invaluable when courts ask.
+**TL;DR**: Current stack answers "what happened" (✅ passes basic logging audits). AJT answers "why was this allowed" (valuable after incidents). Think of it as optional insurance - cheap now, invaluable when courts ask.
 
 ### Why "Trail"?
 

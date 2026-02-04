@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-**Now (2026)**: AWS S3 + CloudTrail + Datadog = EU AI Act compliant ✅
+**Now (2026)**: AWS S3 + CloudTrail + Datadog = passes basic logging audits ✅
 
 **After incident**: Court asks "why was this allowed?" = Existing stack can't answer immediately ❌
 
@@ -14,13 +14,13 @@
 
 ### ✅ What existing tools cover (peacetime audit)
 
-| Tool | What it logs | Article 12 compliance |
+| Tool | What it logs | Basic audit coverage |
 |------|-------------|----------------------|
-| CloudTrail | API calls, timestamps, users | ✅ Traceability |
+| CloudTrail | API calls, timestamps, users | ✅ Event traceability |
 | S3 Object Lock | Immutable storage | ✅ Tamper-resistant |
 | Datadog | Events, metrics | ✅ Monitoring |
 
-**Result**: Most companies pass audits with this stack in 2026.
+**Result**: Most companies pass basic logging audits with this stack in 2026.
 
 ---
 
@@ -140,8 +140,8 @@ A: No - you need logs from the moment the decision was made.
 
 ## Related
 
-- EU AI Act Article 12: Record-keeping requirements
-- Air Canada v. Moffatt (2024): Chatbot liability case
+- EU AI Act Article 12: Basic event logging (AJT addresses post-incident judgment reconstruction gaps)
+- Air Canada v. Moffatt (2024): Chatbot liability case (judgment context was missing)
 - GDPR Article 22: Automated decision-making
 
 ---
