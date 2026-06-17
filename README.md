@@ -1,281 +1,180 @@
 # AI Judgment Trail (AJT) — Negative Proof Simulation
 
-This repository demonstrates post-incident accountability for AI systems: verifiable evidence of what was deliberately blocked, not just what happened.
+**When an AI system blocks a risky answer, can you later prove it did?**
 
-This is a **standalone simulation** intended for audit and accountability discussions.
+Most logs record *what an AI said*. This project records *what it refused to say, and why* — so that after an incident, you can show the dangerous options were caught on purpose, not by luck.
 
----
+That evidence-of-what-was-blocked is what we call a **Negative Proof**.
 
-## ⚠️ Important Disclaimer
-
-**This is a controlled simulation for audit rehearsal.**
-
-- Uses a **deterministic stub** (not real LLMs) to guarantee reproducibility
-- The goal is to demonstrate **negative proof via AI Judgment Trail logging**, not real-world safety or enforcement
-- Not a production system — this is a proof-of-concept for accountability mechanisms
-- **All policies, cases, and inputs are synthetic and for demonstration purposes only**
+> ⚠️ This is a **demonstration**, not a product. It uses synthetic data and a fake (deterministic) LLM so anyone can reproduce the exact same result. It does **not** make AI safer or guarantee compliance — it shows *how to keep auditable evidence of AI decisions*.
 
 ---
 
-## ⚠️ Scope
-
-**This project does NOT claim:**
-- ❌ Correctness of AI outputs
-- ❌ Legal compliance guarantees
-- ❌ Safety or harm prevention
-
-**This project DOES demonstrate:**
-- ✅ **Auditability of decision boundaries** via structured logs
-- ✅ Reproducible AI Judgment Trails for post-incident accountability
-- ✅ Separation of LLM generation from policy enforcement
-
-This is a **simulation for audit rehearsal**, not a production compliance tool.
-
----
-
-## 🤔 Why AJT?
-
-**"Existing tools (CloudTrail, S3, Datadog) already handle basic logging. Why this?"**
-
-👉 **[Read: Why AJT? When "what happened" isn't enough](WHY_AJT.md)**
-
-**TL;DR**: Current stack answers "what happened" (✅ passes basic logging audits). AJT answers "why was this allowed" (valuable after incidents). Think of it as optional insurance - cheap now, invaluable when courts ask.
-
-### Why "Trail"?
-
-A trail represents a sequence of judgment decisions over time, not just isolated logs.
-
-AI Judgment Trail focuses on:
-- where judgment occurred
-- where it stopped
-- and why certain paths were blocked
-
-This is essential for post-incident accountability, where "what happened" is insufficient without "what was deliberately prevented."
-
----
-
-## What this shows
-
-- How blocked decision paths can be logged as evidence
-- Clear separation between generation and judgment
-- Reproducible audit replay using hashes (policy + run)
-
----
-
-## What this does NOT show
-
-- Model explainability or chain-of-thought
-- Policy correctness or normative claims
-- Harm prevention or safety guarantees
-
----
-
-## Relation to AJT Spec
-
-This simulation uses the minimal Judgment Trace schema
-used to represent an AI Judgment Trail (AJT), defined in:
-
-**https://github.com/Nick-heo-eg/spec**
-
-- The spec is used **as-is**
-- No modifications or extensions to the spec are proposed
-- Negative Proof is implemented as an **optional extension layer**
-
-This repository depends only on the public AJT specification
-and is intentionally decoupled from any internal systems.
-
-**Note**: Schema naming uses "Judgment Trace" for historical reasons; the conceptual model is AI Judgment Trail.
-
----
-
-## Architecture
+## The idea in one picture
 
 ```
-User Input
-    ↓
-┌─────────────────────────────┐
-│  Candidate Generator (LLM)  │  ← Deterministic stub (no real API)
-│  Generates 3-5 candidates   │
-└────────┬────────────────────┘
-         │
-         ▼
-┌─────────────────────────────┐
-│  Judgment Layer             │  ← Explicit rules from YAML policy
-│  - Applies rules in order   │
-│  - Blocks violations        │
-│  - Emits Negative Proof     │
-└────────┬────────────────────┘
-         │
-         ▼
-┌─────────────────────────────┐
-│  Final Decision + Log       │
-│  - Selected response        │
-│  - Decision basis (rules)   │
-│  - Negative Proof records   │
-│  - AJT record (spec)        │
-│  - Reproducibility hash     │
-└─────────────────────────────┘
+User question
+      │
+      ▼
+  AI generates 4 possible answers      ← (here: a deterministic stub, not a real LLM)
+      │
+      ▼
+  Judgment Layer checks each answer    ← plain rules written in a YAML file
+  against the policy
+      │
+      ├──►  3 answers violate the rules   →  BLOCKED  (each block is logged = Negative Proof)
+      │
+      └──►  1 answer passes all rules     →  ALLOWED  →  this is the final answer
+      │
+      ▼
+  A signed log records everything:
+  the chosen answer, the rules applied,
+  every blocked answer + reason,
+  and a hash so the run can be replayed.
 ```
 
-**Key principle:**
-The LLM generates. The Judgment Layer decides.
+**Core principle: the LLM *suggests*, the Judgment Layer *decides*.**
 
 ---
 
-## Case: Air Canada Chatbot Misinformation
+## Worked example: the Air Canada chatbot case
 
-### Scenario
-User asks about bereavement fare refunds. LLM may hallucinate that retroactive refunds are possible.
+This is based on a [real, public incident](https://www.cbc.ca/news/canada/british-columbia/air-canada-chatbot-lawsuit-1.7116416) (*Moffatt v. Air Canada*) where an airline chatbot gave a customer wrong refund information — and a tribunal held the airline liable for it.
 
-### Policy Rules
-1. **R1: Source-of-truth enforcement** — Block responses contradicting official refund policy
-2. **R2: Citation requirement** — Require citation to official policy
-3. **R3: Confidence threshold** — Block low-confidence responses (< 0.75)
+**The scenario:** a customer asks about bereavement-fare refunds. The AI might *hallucinate* that retroactive refunds are allowed (they aren't).
 
-### Example Result
-```json
-{
-  "decision": "allow",
-  "selected_candidate": "aircanada_candidate_1",
-  "negative_proof_count": 6,
-  "blocked_by_rules": [
-    "R1_source_of_truth_enforcement",
-    "R2_require_citation",
-    "R3_confidence_threshold"
-  ]
-}
-```
+**The policy (3 rules, written in plain YAML):**
 
-**Coverage:** 3 out of 4 candidates blocked = 75% would have been policy violations without Judgment Layer
+| Rule | What it blocks |
+|------|----------------|
+| **R1 — Source of truth** | Answers that contradict the official refund policy |
+| **R2 — Citation required** | Answers with no reference to the official policy |
+| **R3 — Confidence floor** | Answers the model isn't confident in (< 0.75) |
+
+**What happens when you run it:**
+
+- 4 candidate answers are generated
+- **3 of them are blocked** (1 unsafe answer can break more than one rule, so this run logs **6 rule violations** in total)
+- **1 answer passes** every rule → that one is served to the user → final decision: `allow`
+
+So `allow` doesn't mean "anything goes." It means **the unsafe options were filtered out first, and only the clean one survived** — and you have a log proving it.
 
 ---
 
-## Run locally
+## Try it yourself (30 seconds)
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
 
-# Run simulation
+# Run the simulation
 PYTHONPATH=. python -m sim.run --case aircanada --seed 42 --out logs/demo.json
-
-# Run tests
-pytest -v
 ```
 
-**Expected output:**
+Expected output:
+
 ```
 ✓ Simulation complete: aircanada
-  Policy: 1.0.0 (960abe31...)
-  Candidates: 4
-  Negative Proofs: 6
-  Final Decision: allow
-  Run Hash: 82960705...
+  Policy:        1.0.0 (960abe31...)
+  Candidates:    4
+  Negative Proofs: 6      ← rule violations recorded
+  Final Decision: allow   ← the one clean answer
+  Run Hash:      82960705...
+```
+
+Run it again with the same seed → you get the **exact same hash**. That reproducibility is the whole point: an auditor can re-run your decision and confirm nothing was changed.
+
+```bash
+pytest -v   # 22 tests
 ```
 
 ---
 
-## Log Structure
+## What's in the log
 
-Each run produces a JSON log with:
+Every run writes one JSON file containing:
 
-- **Candidates** (all generated options)
-- **Decision basis** (selected candidate + applied rule IDs)
-- **Negative Proof** (blocked candidates with reasons)
-- **AI Judgment Trail record** (spec-compliant, 9 required fields + extensions)
-- **Reproducibility** (seed + policy hash + run hash)
-
----
-
-## Design Principles
-
-1. **Fail closed** — If logging fails, no decision is emitted
-2. **No silent failures** — Blocks and failures are explicit
-3. **Log, don't enforce** — This is an audit trail, not a policy engine
+- **All candidates** — every answer the AI considered
+- **The decision** — which answer was chosen + which rules were applied
+- **Negative Proof** — each blocked answer and the reason it was blocked
+- **AJT record** — the spec-compliant trail (9 required fields)
+- **Reproducibility** — seed + policy hash + run hash
 
 ---
 
-## Testing
+## What this is — and isn't
 
-- **22 passing tests** including:
-  - Reproducibility (same seed → identical output)
-  - Negative Proof presence (blocks generate logs)
-  - AJT spec compliance (9 required fields)
-  - Policy hash lock (changes detected)
+| ✅ This project demonstrates | ❌ This project does NOT claim |
+|------------------------------|-------------------------------|
+| Auditable decision boundaries via structured logs | That the AI's answers are *correct* |
+| Reproducible trails for after-the-fact review | Legal compliance |
+| Clean separation of AI generation from rule enforcement | Safety or harm prevention |
 
----
-
-## Failure Modes
-
-**Logging Failure Behavior:**
-- If AI Judgment Trail logging fails → system fails closed (no decision emitted)
-- If policy file missing → simulation aborts with error
-- If hash mismatch detected → audit trail integrity compromised (logged)
-
-**Design principle:** Silence is not an option. Failures are explicit.
+It's a **rehearsal for an audit**, not a compliance tool. All policies, cases, and inputs are **synthetic**.
 
 ---
 
-## File Structure
+## Design principles
+
+1. **Fail closed** — if logging fails, no decision is emitted (silence is never an option)
+2. **No silent failures** — every block and every error is written down explicitly
+3. **Log, don't enforce** — this is an audit trail, not a runtime policy engine
+
+---
+
+## Why it matters
+
+- **For auditors** — same inputs always produce the same output, verifiable by hash; every decision has an explicit rule basis.
+- **For procurement / risk** — demonstrates concrete control over LLM output, in human-readable YAML + machine-verifiable logs.
+- **For engineers** — local-first, no API keys, no network calls, fully tested.
+
+> Curious why existing tools (CloudTrail, S3, Datadog) aren't enough?
+> 👉 **[Why AJT? When "what happened" isn't enough](WHY_AJT.md)**
+
+---
+
+## Project layout
 
 ```
 ajt-negative-proof-sim/
-├── README.md
-├── requirements.txt
 ├── sim/
-│   ├── run.py                         # CLI entry point
+│   ├── run.py                      # CLI entry point
 │   ├── core/
-│   │   ├── candidate_generator.py     # Deterministic LLM stub
-│   │   ├── judgment_layer.py          # Rule application engine
-│   │   ├── ajt_record.py              # AJT spec implementation
-│   │   ├── log_schema.py              # Pydantic models
-│   │   └── hash_utils.py              # SHA256 hashing
-│   ├── cases/
-│   │   └── aircanada_case.py          # Air Canada case spec
-│   ├── policies/
-│   │   └── policy_aircanada.yaml      # Policy rules
-│   ├── fixtures/
-│   │   └── aircanada_inputs.json      # Input test data
-│   └── tests/
-│       ├── test_reproducibility.py
-│       ├── test_negative_proof_presence.py
-│       ├── test_policy_hash_lock.py
-│       └── test_ajt_compliance.py
-└── logs/                              # Output directory
+│   │   ├── candidate_generator.py  # Deterministic LLM stub
+│   │   ├── judgment_layer.py       # Rule application engine
+│   │   ├── ajt_record.py           # AJT spec implementation
+│   │   ├── log_schema.py           # Pydantic models
+│   │   └── hash_utils.py           # SHA256 hashing
+│   ├── cases/aircanada_case.py     # The Air Canada case
+│   ├── policies/policy_aircanada.yaml
+│   ├── fixtures/aircanada_inputs.json
+│   └── tests/                      # reproducibility, negative proof, hash lock, spec compliance
+└── logs/                           # output directory
 ```
 
 ---
 
-## Why This Matters
+## Relation to the AJT Spec
 
-### For Auditors
-- **Reproducible**: Same inputs = same outputs, verifiable via hash
-- **Traceable**: Every decision has explicit rule basis
-- **Accountable**: Negative Proof shows what was prevented, not just what happened
+This simulation uses the minimal Judgment Trace schema from the public spec:
+**https://github.com/Nick-heo-eg/spec**
 
-### For Procurement
-- **Risk Mitigation**: Demonstrates control over LLM output
-- **Compliance**: Shows rule enforcement mechanism
-- **Transparency**: Human-readable policy in YAML + machine-verifiable logs
+- The spec is used **as-is** — no modifications or extensions proposed
+- Negative Proof is built as an **optional extension layer** on top
+- This repo depends only on the public spec and is decoupled from any internal systems
 
-### For Engineers
-- **Local-first**: No API keys, no external dependencies
-- **Fast**: Deterministic stub, no network calls
-- **Testable**: Pytest-based validation suite
+*Note: the schema is named "Judgment Trace" for historical reasons; the concept is the AI Judgment Trail.*
 
 ---
 
 ## License
 
-MIT License
+MIT
+
+## Related work
+
+- **AJT Spec** — https://github.com/Nick-heo-eg/spec
+- **OpenTelemetry Semantic Conventions** — https://opentelemetry.io/docs/specs/semconv/
 
 ---
 
-## Related Work
-
-- **AJT Spec**: https://github.com/Nick-heo-eg/spec
-- **OpenTelemetry Semantic Conventions**: https://opentelemetry.io/docs/specs/semconv/
-
----
-
-**Feedback welcome** — especially from legal/compliance professionals who've dealt with AI audits.
+**Feedback welcome** — especially from legal and compliance professionals who've dealt with AI audits.
